@@ -100,12 +100,10 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         title: const Text('Prueba Google Maps y Geolocator'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: MediaQuery.of(context).size.height *
-                  0.7, // Ajusta la altura del cuadro para el mapa
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
@@ -121,45 +119,46 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   myLocationEnabled: true,
                   myLocationButtonEnabled: false,
+                  scrollGesturesEnabled: true, // Permite mover el mapa
+                  zoomGesturesEnabled: true, // Permite hacer zoom en el mapa
                 ),
               ),
             ),
-            const SizedBox(height: 5),
-            Text(
-              _currentCoordinates,
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  _showCurrentCoordinates();
-                  _moveToCurrentLocation();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(10), // Bordes redondeados
-                  ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            _currentCoordinates,
+            style: const TextStyle(fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                _showCurrentCoordinates();
+                _moveToCurrentLocation();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10), // Bordes redondeados
                 ),
-                child: const Text(
-                  'Mostrar Coordenadas',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white, // Texto en color blanco
-                    fontWeight: FontWeight.bold,
-                  ),
+              ),
+              child: const Text(
+                'Mostrar Coordenadas',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white, // Texto en color blanco
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
