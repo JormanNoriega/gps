@@ -1,81 +1,162 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: LocationScreen(),
-      debugShowCheckedModeBanner: false,
+      title: 'Google Maps App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      debugShowCheckedModeBanner: false, // Quita el banner de debug
+      home: MapScreen(),
     );
   }
 }
 
-class LocationScreen extends StatefulWidget {
+class MapScreen extends StatefulWidget {
   @override
-  _LocationScreenState createState() => _LocationScreenState();
+  _MapScreenState createState() => _MapScreenState();
 }
 
-class _LocationScreenState extends State<LocationScreen> {
-  String locationMessage = "Presiona para obtener la ubicación";
+class _MapScreenState extends State<MapScreen> {
+  late GoogleMapController mapController;
 
-  Future<void> _getLocation() async {
-    try {
-      Position position = await _determinePosition();
-      setState(() {
-        locationMessage =
-            'Latitud: ${position.latitude}, Longitud: ${position.longitude}';
-      });
-    } catch (e) {
-      setState(() {
-        locationMessage = 'Error: $e';
-      });
-    }
+  // Posición inicial en Colombia
+  LatLng _initialPosition = const LatLng(4.5709, -74.2973);
+  String _currentCoordinates = "Presiona el botón para obtener coordenadas";
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
   }
 
-  Future<Position> _determinePosition() async {
+  Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Verificar si los servicios de ubicación están habilitados.
+    // Verificar que los servicios de ubicación están habilitados
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
       return Future.error('Los servicios de ubicación están deshabilitados.');
     }
 
-    // Verificar el estado de los permisos.
+    // Verificar y solicitar permisos
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        return Future.error('Permiso de ubicación denegado');
+        return Future.error('Permiso de ubicación denegado.');
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      return Future.error('Permisos de ubicación denegados permanentemente.');
+      return Future.error('Permiso de ubicación permanentemente denegado.');
     }
 
-    // Cuando los permisos están habilitados y los servicios de ubicación activos.
-    return await Geolocator.getCurrentPosition();
+    Position position = await Geolocator.getCurrentPosition();
+    setState(() {
+      _initialPosition = LatLng(position.latitude, position.longitude);
+      _moveToCurrentLocation();
+    });
+  }
+
+  void _moveToCurrentLocation() {
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: _initialPosition,
+          zoom: 15.0,
+        ),
+      ),
+    );
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+    _moveToCurrentLocation();
+  }
+
+  // Método para obtener y mostrar las coordenadas actuales
+  Future<void> _showCurrentCoordinates() async {
+    Position position = await Geolocator.getCurrentPosition();
+    setState(() {
+      _currentCoordinates =
+          "Latitud: ${position.latitude}, Longitud: ${position.longitude}";
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Demostración de GPS')),
-      body: Center(
+      appBar: AppBar(
+        title: const Text('Prueba Google Maps y Geolocator'),
+      ),
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(locationMessage),
-            ElevatedButton(
-              onPressed: _getLocation,
-              child: Text('Obtener Ubicación Actual'),
+            Container(
+              height: MediaQuery.of(context).size.height *
+                  0.7, // Ajusta la altura del cuadro para el mapa
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.blue, width: 2),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: GoogleMap(
+                  onMapCreated: _onMapCreated,
+                  initialCameraPosition: CameraPosition(
+                    target: _initialPosition,
+                    zoom: 10.0,
+                  ),
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+                ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              _currentCoordinates,
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  _showCurrentCoordinates();
+                  _moveToCurrentLocation();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(10), // Bordes redondeados
+                  ),
+                ),
+                child: const Text(
+                  'Mostrar Coordenadas',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white, // Texto en color blanco
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
